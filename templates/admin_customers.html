@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}العملاء — {{ store_name }}{% endblock %}
+{% block content %}
+<section class="container admin-page">
+  <h1>العملاء والحسابات</h1>
+  <nav class="admin-nav" aria-label="قائمة الإدارة">
+    <a href="{{ url_for('admin_dashboard') }}">لوحة التحكم</a>
+  </nav>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>الهاتف</th><th>تاريخ التسجيل</th></tr></thead>
+      <tbody>
+        {% for customer in customers %}
+        <tr><td>{{ customer.full_name }}</td><td>{{ customer.email }}</td><td>{{ customer.phone }}</td><td>{{ customer.created_at.strftime('%Y-%m-%d') }}</td></tr>
+        {% else %}
+        <tr><td colspan="4">لا يوجد عملاء مسجلون.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <h2>طلبات الضيوف</h2>
+  {% for order in guest_orders %}
+  <p>{{ order.order_number }} · {{ order.full_name }} · {{ order.phone }} · {{ order.total|money }} DH</p>
+  {% else %}
+  <p>لا توجد طلبات ضيوف.</p>
+  {% endfor %}
+</section>
+{% endblock %}

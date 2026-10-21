@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Mon panier' if language == 'fr' else 'سلة التسوق' }} — {{ store_name }}{% endblock %}
+{% block content %}
+<section class="container premium-page">
+  <div class="premium-page-heading"><span class="section-kicker">{{ 'Presque à vous' if language == 'fr' else 'راجع طلبك قبل إتمامه' }}</span><h1>{{ 'Mon panier' if language == 'fr' else 'سلة التسوق' }} <span>({{ cart_count }})</span></h1><a href="{{ url_for('index') }}">{{ t('continue_shopping') }} ↗</a></div>
+  <div class="premium-cart-layout">
+    <div class="premium-cart-items">
+      {% if items %}
+      <form action="{{ url_for('update_cart') }}" method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        {% for item in items %}<article class="premium-cart-item">
+          <a class="premium-cart-image" href="{{ url_for('product_detail', slug=item.product.slug) }}"><img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" loading="lazy"></a>
+          <div class="premium-cart-info"><span class="product-category-chip">{{ item.product.category.name_fr if language == 'fr' else item.product.category.name_ar }}</span><a class="product-title" href="{{ url_for('product_detail', slug=item.product.slug) }}">{{ item.product.name_fr or item.product.name if language == 'fr' else item.product.name }}</a><small>{{ item.product.seller }}</small><button class="remove-button" type="submit" form="remove-{{ item.product.id }}">{{ 'Supprimer' if language == 'fr' else 'حذف من السلة' }}</button></div>
+          <div class="premium-cart-controls"><b>{{ item.subtotal|money }} {{ currency }}</b><label>{{ 'Qté' if language == 'fr' else 'الكمية' }} <input type="number" min="0" max="{{ item.product.stock }}" name="quantity_{{ item.product.id }}" value="{{ item.quantity }}"></label></div>
+        </article>{% endfor %}
+        <button class="pill-button outline-pill" type="submit">{{ 'Mettre à jour' if language == 'fr' else 'تحديث الكمية' }}</button>
+      </form>
+      {% for item in items %}<form id="remove-{{ item.product.id }}" action="{{ url_for('remove_from_cart', product_id=item.product.id) }}" method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"></form>{% endfor %}
+      {% else %}<div class="premium-empty"><span>♡</span><h2>{{ 'Votre panier est encore vide' if language == 'fr' else 'سلة التسوق فارغة حالياً' }}</h2><a class="pill-button dark-pill" href="{{ url_for('index') }}">{{ 'Découvrir la boutique' if language == 'fr' else 'تصفح المتجر' }}</a></div>{% endif %}
+    </div>
+    {% if items %}<aside class="premium-summary"><h2>{{ 'Résumé' if language == 'fr' else 'ملخص الطلب' }}</h2>
+      <form class="premium-coupon" method="post" action="{{ url_for('apply_coupon') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><label for="coupon">{{ t('coupon') }}</label><div><input id="coupon" name="coupon" value="{{ session.get('coupon','') }}" placeholder="CODE"><button class="pill-button outline-pill">{{ t('apply') }}</button></div></form>
+      <div class="summary-line"><span>{{ t('subtotal') }}</span><b>{{ subtotal|money }} {{ currency }}</b></div>{% if discount %}<div class="summary-line"><span>{{ 'Réduction' if language == 'fr' else 'التخفيض' }}</span><b>-{{ discount|money }} {{ currency }}</b></div>{% endif %}
+      <div class="summary-line"><span>{{ t('shipping') }}</span><b>{{ shipping|money }} {{ currency }}</b></div><div class="summary-total"><span>{{ t('total') }}</span><strong>{{ total|money }} {{ currency }}</strong></div>
+      <a class="pill-button dark-pill premium-checkout-button" href="{{ url_for('checkout') }}">{{ t('checkout') }} <span>↗</span></a><p class="summary-cod">♡ {{ 'Paiement à la livraison · partout au Maroc' if language == 'fr' else 'الدفع عند الاستلام · التوصيل إلى جميع المدن' }}</p>
+    </aside>{% endif %}
+  </div>
+</section>
+{% endblock %}

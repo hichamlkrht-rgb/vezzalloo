@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Contactez-nous' if language == 'fr' else 'تواصل معنا' }} — {{ store_name }}{% endblock %}
+{% block content %}
+<section class="container premium-page">
+  <div class="premium-page-heading">
+    <span class="section-kicker">{{ 'Nous sommes à votre écoute' if language == 'fr' else 'فريقنا رهن إشارتك' }}</span>
+    <h1>{{ 'Contactez-nous' if language == 'fr' else 'أرسل لنا رسالة' }}</h1>
+    <p>{{ 'Nous vous répondrons dès que possible.' if language == 'fr' else 'أرسل استفسارك وسيتواصل معك فريقنا في أقرب وقت.' }}</p>
+  </div>
+  <div class="premium-account-card contact-card">
+    <form class="premium-account-form" method="post" action="{{ url_for('contact') }}">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <label>{{ 'Nom complet' if language == 'fr' else 'الاسم الكامل' }}<input name="name" maxlength="160" autocomplete="name" required></label>
+      <label>{{ 'Adresse e-mail' if language == 'fr' else 'البريد الإلكتروني' }}<input name="email" type="email" maxlength="180" autocomplete="email" required></label>
+      <label>{{ 'Téléphone (facultatif)' if language == 'fr' else 'الهاتف (اختياري)' }}<input name="phone" type="tel" maxlength="40" autocomplete="tel"></label>
+      <label>{{ 'Sujet' if language == 'fr' else 'الموضوع' }}<input name="subject" minlength="3" maxlength="180" required></label>
+      <label>{{ 'Votre message' if language == 'fr' else 'رسالتك' }}<textarea name="message" minlength="10" maxlength="4000" rows="6" required></textarea></label>
+      <button class="pill-button dark-pill" type="submit">{{ 'Envoyer le message' if language == 'fr' else 'إرسال الرسالة' }} ↗</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

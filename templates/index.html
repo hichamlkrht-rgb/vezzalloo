@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}{{ store_name }} — {{ 'Découvrez nos sélections' if language == 'fr' else 'تسوق بثقة واكتشف اختياراتنا' }}{% endblock %}
+{% block content %}
+{% set category_image_defaults = {
+  'electronics': [
+    '/static/images/electronics.jpg',
+    '/static/images/electronics.jpg',
+    '/static/images/electronics.jpg'
+  ],
+  'accessories': [
+    '/static/images/accessories-sunglasses.jpg',
+    '/static/images/accessories-watch.jpg',
+    '/static/images/accessories-backpack.jpg'
+  ],
+  'beauty': [
+    '/static/images/beauty-model-facial.jpg',
+    '/static/images/beauty-makeup.jpg',
+    '/static/images/beauty-perfume-minimal.jpg',
+    '/static/images/beauty-hair-styling.jpg'
+  ],
+  'clothing': [
+    '/static/images/clothing.jpg',
+    '/static/images/clothing.jpg'
+  ],
+  'home': [
+    '/static/images/home-kitchen.jpg',
+    '/static/images/home-kitchen-2.jpg',
+    '/static/images/home-kitchen.jpg'
+  ]
+} %}
+{% macro category_label(category) -%}
+  {%- if language == 'fr' -%}
+    {{- {'beauty': 'Beauté & soin', 'home': 'Maison & cuisine'}.get(category.slug, category.name_fr) -}}
+  {%- else -%}
+    {{- {'beauty': 'الجمال والعناية', 'home': 'المنزل والمطبخ'}.get(category.slug, category.name_ar) -}}
+  {%- endif -%}
+{%- endmacro %}
+{% macro product_cards(items, scroller_id='') %}
+{% if scroller_id %}<div class="product-carousel-shell">{% endif %}
+<div class="premium-product-grid{% if scroller_id %} product-carousel-track{% endif %}"{% if scroller_id %} id="{{ scroller_id }}" data-product-scroller{% endif %}>
+  {% for product in items %}
+  {% set fallbacks = category_image_defaults.get(product.category.slug, category_image_defaults['electronics']) %}
+  {% set has_product_image = product.image_url and 'placeholder' not in product.image_url and 'images.unsplash.com' not in product.image_url %}
+  {% set image_url = product.image_url if has_product_image else fallbacks[product.id % fallbacks|length] %}
+  <article class="premium-product-card reveal-on-scroll">
+    <div class="premium-product-media">
+      <a class="product-image-wrap" href="{{ url_for('product_detail', slug=product.slug) }}">
+        <img src="{{ image_url }}" data-fallback="{{ fallbacks[(product.id + 1) % fallbacks|length] }}" alt="{{ (product.name_fr or product.name) if language == 'fr' else product.name }}{{ '' if has_product_image else (' — photo illustrative de la catégorie' if language == 'fr' else ' — صورة توضيحية للفئة') }}" loading="lazy">
+        {% if product.is_featured %}<span class="product-flag">{{ 'Meilleure vente' if language == 'fr' else 'الأكثر مبيعاً' }}</span>{% elif product.is_new %}<span class="product-flag">{{ 'Nouveau' if language == 'fr' else 'جديد' }}</span>{% endif %}
+      </a>
+      {% if current_user.is_authenticated %}
+      <form class="wishlist-form" action="{{ url_for('toggle_wishlist', product_id=product.id) }}" method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="heart-button" type="submit" aria-label="{{ 'Ajouter aux favoris' if language == 'fr' else 'أضف إلى المفضلة' }}">♡</button></form>
+      {% else %}
+      <a class="heart-button" href="{{ url_for('account_login') }}" aria-label="{{ 'Ajouter aux favoris' if language == 'fr' else 'أضف إلى المفضلة' }}">♡</a>
+      {% endif %}
+    </div>
+    <div class="premium-product-info">
+      <div class="product-meta"><span class="product-rating"><span>★★★★★</span> {{ product.rating }}{% if product.reviews %} ({{ product.reviews }}){% endif %}</span><span class="product-category-chip">{{ category_label(product.category) }}</span></div>
+      <a class="product-title" href="{{ url_for('product_detail', slug=product.slug) }}">{{ product.name_fr or product.name if language == 'fr' else product.name }}</a>
+      <p class="product-short-description">{{ product.description_fr if language == 'fr' and product.description_fr else product.description }}</p>
+      <div class="premium-price-row"><strong>{{ product.price|money }} {{ currency }}</strong>{% if product.old_price > product.price %}<del>{{ product.old_price|money }} {{ currency }}</del><span class="discount-note">-{{ product.discount_percent }}%</span>{% endif %}</div>
+      <div class="product-card-actions">
+        {% if product.stock > 0 %}
+        <form class="premium-add-form" data-value="{{ product.price }}" action="{{ url_for('add_to_cart', product_id=product.id) }}" method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="pill-button product-add-button" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 1.9-1.4L21 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>{{ 'Ajouter' if language == 'fr' else 'أضف للسلة' }}</button></form>
+        {% else %}<button class="pill-button product-add-button" disabled>{{ 'Épuisé' if language == 'fr' else 'نفد المخزون' }}</button>{% endif %}
+        <a class="product-detail-button" href="{{ url_for('product_detail', slug=product.slug) }}">{{ 'Détails' if language == 'fr' else 'التفاصيل' }}</a>
+      </div>
+      <small class="product-stock-note">{{ 'En stock' if language == 'fr' else 'متوفر' }}: {{ product.stock }}</small>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% if scroller_id %}<div class="product-carousel-controls"><button type="button" data-scroll-target="{{ scroller_id }}" data-scroll-direction="1" aria-label="{{ 'Produits suivants' if language == 'fr' else 'المنتجات التالية' }}">‹</button><button type="button" data-scroll-target="{{ scroller_id }}" data-scroll-direction="-1" aria-label="{{ 'Produits précédents' if language == 'fr' else 'المنتجات السابقة' }}">›</button></div></div>{% endif %}
+{% endmacro %}
+
+{% set slide_count = banners|length + hero_slides|length %}
+<section class="container premium-hero hero-carousel" data-carousel data-interval="5000" aria-label="{{ 'À la une' if language == 'fr' else 'عروض المتجر' }}" aria-roledescription="carousel">
+  <div class="hero-blob blob-one"></div><div class="hero-blob blob-two"></div>
+  <div class="hero-carousel-track" aria-live="polite">
+    {% for banner in banners %}
+    {% set slide_active = loop.first %}
+    {% set banner_fallbacks = category_image_defaults['beauty'] %}
+    {% set banner_image = banner.image_url if banner.image_url and 'placeholder' not in banner.image_url and 'images.unsplash.com' not in banner.image_url else banner_fallbacks[loop.index0 % banner_fallbacks|length] %}
+    <article class="premium-hero-slide carousel-slide{% if slide_active %} is-active{% endif %}" role="group" aria-roledescription="slide" aria-label="{{ loop.index }} / {{ slide_count }}" aria-hidden="{{ 'false' if slide_active else 'true' }}">
+      <div class="premium-hero-copy">
+        <span class="eyebrow">{{ 'Offre de la boutique' if language == 'fr' else 'اختيارات المتجر لهذا الأسبوع' }}</span>
+        <h1>{{ banner.title }}</h1>
+        <p>{{ banner.subtitle or ('Des essentiels choisis avec soin, au meilleur prix.' if language == 'fr' else 'منتجات مختارة بعناية وأسعار مناسبة، والتوصيل إلى باب منزلك.') }}</p>
+        {% if banner_product %}<div class="hero-offer-price"><strong>{{ banner_product.price|money }} {{ currency }}</strong>{% if banner_product.old_price > banner_product.price %}<del>{{ banner_product.old_price|money }} {{ currency }}</del><span>-{{ banner_product.discount_percent }}%</span>{% endif %}</div>{% endif %}
+        <a class="pill-button dark-pill" href="{{ banner.link_url or '#offers' }}">{{ 'Acheter maintenant' if language == 'fr' else 'تسوق الآن' }} <span aria-hidden="true">↗</span></a>
+        <div class="hero-payment"><span>✳</span> {{ 'Paiement à la livraison partout au Maroc' if language == 'fr' else 'الدفع عند الاستلام في جميع أنحاء المغرب' }}</div>
+      </div>
+      <div class="premium-hero-art"><span class="hero-orbit"></span><img class="hero-product-image" src="{{ banner_image }}" data-fallback="{{ banner_fallbacks[(loop.index0 + 1) % banner_fallbacks|length] }}" alt="{{ banner.title }}" {% if slide_active %}fetchpriority="high"{% else %}loading="lazy"{% endif %}><span class="hero-float-label">{{ 'Choisi pour vous' if language == 'fr' else 'اختير بعناية' }} <span>✦</span></span></div>
+    </article>
+    {% endfor %}
+    {% for slide in hero_slides %}
+    {% set slide_index = banners|length + loop.index0 %}
+    {% set fallbacks = category_image_defaults.get(slide.category.slug, category_image_defaults['electronics']) %}
+    {% set slide_image = slide.product.image_url if slide.product and slide.product.image_url and 'placeholder' not in slide.product.image_url and 'images.unsplash.com' not in slide.product.image_url else slide.category.image_url if slide.category.image_url and 'placeholder' not in slide.category.image_url and 'images.unsplash.com' not in slide.category.image_url else fallbacks[0] %}
+    {% set slide_active = not banners and loop.first %}
+    <article class="premium-hero-slide carousel-slide{% if slide_active %} is-active{% endif %}" role="group" aria-roledescription="slide" aria-label="{{ slide_index + 1 }} / {{ slide_count }}" aria-hidden="{{ 'false' if slide_active else 'true' }}">
+      <div class="premium-hero-copy">
+        <span class="eyebrow">{{ category_label(slide.category) }}</span>
+        <h1>{{ category_label(slide.category) }}</h1>
+        <p>{% if slide.product and slide.product.old_price > slide.product.price %}{{ 'Offre spéciale' if language == 'fr' else 'تخفيض خاص' }} · {{ slide.product.discount_percent }}%{% else %}{{ 'Découvrez notre sélection et profitez de la livraison partout au Maroc.' if language == 'fr' else 'اكتشف تشكيلتنا المختارة بعناية مع التوصيل إلى جميع مدن المغرب.' }}{% endif %}</p>
+        {% if slide.product %}<div class="hero-offer-price"><strong>{{ slide.product.price|money }} {{ currency }}</strong>{% if slide.product.old_price > slide.product.price %}<del>{{ slide.product.old_price|money }} {{ currency }}</del><span>-{{ slide.product.discount_percent }}%</span>{% endif %}</div>{% endif %}
+        <a class="pill-button dark-pill" href="{{ url_for('index', category=slide.category.slug) }}">{{ 'Acheter maintenant' if language == 'fr' else 'تسوق الآن' }} <span aria-hidden="true">↗</span></a>
+        <div class="hero-payment"><span>✳</span> {{ 'Paiement à la livraison partout au Maroc' if language == 'fr' else 'الدفع عند الاستلام في جميع أنحاء المغرب' }}</div>
+      </div>
+      <div class="premium-hero-art"><span class="hero-orbit"></span><img class="hero-product-image" src="{{ slide_image }}" data-fallback="{{ fallbacks[(loop.index0 + 1) % fallbacks|length] }}" alt="{{ category_label(slide.category) }}" {% if slide_active %}fetchpriority="high"{% else %}loading="lazy"{% endif %}><span class="hero-float-label">{{ 'Choisi pour vous' if language == 'fr' else 'اختير بعناية' }} <span>✦</span></span></div>
+    </article>
+    {% endfor %}
+    {% if not slide_count %}
+    <article class="premium-hero-slide carousel-slide is-active" role="group" aria-roledescription="slide" aria-label="1 / 1" aria-hidden="false">
+      <div class="premium-hero-copy"><span class="eyebrow">{{ 'Votre boutique, partout au Maroc' if language == 'fr' else 'تسوق بثقة من أي مدينة في المغرب' }}</span><h1>{{ 'Des choix qui vous ressemblent' if language == 'fr' else 'اختيارات تلائم أسلوبك' }}</h1><p>{{ 'Découvrez nos catégories et nos nouveautés.' if language == 'fr' else 'اكتشف تصنيفات المتجر وأحدث المنتجات والعروض.' }}</p><a class="pill-button dark-pill" href="#offers">{{ 'Découvrir les offres' if language == 'fr' else 'اكتشف العروض' }} ↗</a><div class="hero-payment">✳ {{ 'Paiement à la livraison' if language == 'fr' else 'الدفع عند الاستلام' }}</div></div>
+      <div class="premium-hero-art"><span class="hero-orbit"></span><img class="hero-product-image" src="{{ category_image_defaults['beauty'][0] }}" alt="{{ store_name }}" fetchpriority="high"></div>
+    </article>
+    {% endif %}
+  </div>
+  {% if slide_count > 1 %}
+  <div class="carousel-controls hero-carousel-controls">
+    <button class="carousel-arrow" type="button" data-carousel-prev aria-label="{{ 'Diapositive précédente' if language == 'fr' else 'الشريحة السابقة' }}">‹</button>
+    <div class="carousel-dots">
+      {% for banner in banners %}<button type="button" class="carousel-dot{% if loop.first %} is-active{% endif %}" data-carousel-dot="{{ loop.index0 }}" aria-label="{{ 'Afficher la bannière' if language == 'fr' else 'عرض اللافتة' }} {{ loop.index }}" aria-current="{{ 'true' if loop.first else 'false' }}"></button>{% endfor %}
+      {% for slide in hero_slides %}<button type="button" class="carousel-dot{% if not banners and loop.first %} is-active{% endif %}" data-carousel-dot="{{ banners|length + loop.index0 }}" aria-label="{{ 'Afficher la catégorie' if language == 'fr' else 'عرض التصنيف' }} {{ category_label(slide.category) }}" aria-current="{{ 'true' if not banners and loop.first else 'false' }}"></button>{% endfor %}
+    </div>
+    <button class="carousel-arrow" type="button" data-carousel-next aria-label="{{ 'Diapositive suivante' if language == 'fr' else 'الشريحة التالية' }}">›</button>
+  </div>
+  <div class="carousel-progress" aria-hidden="true"><span data-carousel-progress></span></div>
+  {% endif %}
+</section>
+
+<section class="container category-feature-carousel" data-carousel data-interval="5500" aria-label="{{ 'Catégories populaires' if language == 'fr' else 'التصنيفات الرئيسية' }}" aria-roledescription="carousel">
+  <div class="category-feature-track">
+    {% for category_page in [categories[:3], categories[3:]] if category_page %}
+    {% set page_active = loop.first %}
+    <div class="category-feature-page carousel-slide{% if page_active %} is-active{% endif %}" role="group" aria-roledescription="slide" aria-label="{{ loop.index }} / {{ 2 if categories|length > 3 else 1 }}" aria-hidden="{{ 'false' if page_active else 'true' }}">
+      {% for item in category_page %}
+      {% set images = category_image_defaults.get(item.slug, category_image_defaults['electronics']) %}
+      {% set image_url = item.image_url if item.image_url and 'placeholder' not in item.image_url and 'images.unsplash.com' not in item.image_url else images[loop.index0 % images|length] %}
+      <a class="category-feature-card" href="{{ url_for('index', category=item.slug) }}"><img src="{{ image_url }}" data-fallback="{{ images[(loop.index0 + 1) % images|length] }}" alt="" loading="lazy"><span>{{ category_label(item) }}</span></a>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% if categories|length > 3 %}
+  <div class="carousel-controls category-feature-controls">
+    <button class="carousel-arrow" type="button" data-carousel-prev aria-label="{{ 'Catégories précédentes' if language == 'fr' else 'التصنيفات السابقة' }}">‹</button>
+    <div class="carousel-dots">{% for category_page in [categories[:3], categories[3:]] if category_page %}<button type="button" class="carousel-dot{% if loop.first %} is-active{% endif %}" data-carousel-dot="{{ loop.index0 }}" aria-label="{{ 'Afficher ce groupe de catégories' if language == 'fr' else 'عرض مجموعة التصنيفات' }} {{ loop.index }}" aria-current="{{ 'true' if loop.first else 'false' }}"></button>{% endfor %}</div>
+    <button class="carousel-arrow" type="button" data-carousel-next aria-label="{{ 'Catégories suivantes' if language == 'fr' else 'التصنيفات التالية' }}">›</button>
+  </div>
+  <div class="carousel-progress" aria-hidden="true"><span data-carousel-progress></span></div>
+  {% endif %}
+</section>
+
+<section class="container stat-row" aria-label="{{ 'Nos engagements' if language == 'fr' else 'مميزات التسوق' }}">
+  <article class="stat-card"><span class="stat-number">{{ store_setting('stat_rating', '4.9') }}<i>★</i></span><span>{{ store_setting('stat_rating_label_fr', 'Note moyenne') if language == 'fr' else store_setting('stat_rating_label', 'متوسط تقييم العملاء') }}</span></article>
+  <article class="stat-card"><span class="stat-number">{{ store_setting('stat_dispatch', '24h') }}</span><span>{{ store_setting('stat_dispatch_label_fr', 'Expédition rapide') if language == 'fr' else store_setting('stat_dispatch_label', 'تجهيز وشحن خلال 24 ساعة') }}</span></article>
+  <article class="stat-card"><span class="stat-number">{{ store_setting('stat_customers', '+15k') }}</span><span>{{ store_setting('stat_customers_label_fr', 'Clients satisfaits') if language == 'fr' else store_setting('stat_customers_label', 'عملاء سعداء') }}</span></article>
+</section>
+
+<section class="container promo-card">
+  <div class="promo-symbol">✳</div>
+  <div class="promo-line"><span class="promo-index">01</span><span>{{ store_setting('promo_coupon', 'رمز تخفيض خاص على طلبك') }}</span></div>
+  <div class="promo-line"><span class="promo-index">02</span><span>{{ store_setting('promo_cod', 'الدفع عند الاستلام في جميع مدن المغرب') }}</span></div>
+  <div class="promo-line"><span class="promo-index">03</span><span>{{ store_setting('promo_consultation', 'فريقنا جاهز للإجابة عن استفساراتك') }}</span></div>
+</section>
+
+{% if has_filters %}
+<section class="container premium-section filtered-catalog">
+  <div class="premium-section-heading"><div><span class="section-kicker">{{ t('search_results') }}</span><h2>{{ search or t('categories') }}</h2></div></div>
+  <form class="catalog-filters" action="{{ url_for('index') }}" method="get">
+    {% if search %}<input type="hidden" name="q" value="{{ search }}">{% endif %}
+    {% if beauty_type %}<input type="hidden" name="beauty_type" value="{{ beauty_type }}">{% endif %}
+    <label>{{ 'Catégorie' if language == 'fr' else 'التصنيف' }}<select name="category"><option value="">{{ 'Toutes les catégories' if language == 'fr' else 'جميع التصنيفات' }}</option>{% for category in categories %}<option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>{{ category_label(category) }}</option>{% endfor %}</select></label>
+    <label>{{ 'Prix min.' if language == 'fr' else 'السعر من' }}<input type="number" min="0" step="1" name="min_price" value="{{ request.args.get('min_price','') }}"></label>
+    <label>{{ 'Prix max.' if language == 'fr' else 'السعر إلى' }}<input type="number" min="0" step="1" name="max_price" value="{{ request.args.get('max_price','') }}"></label>
+    <label>{{ 'Note min.' if language == 'fr' else 'التقييم الأدنى' }}<select name="min_rating"><option value="">{{ 'Toutes' if language == 'fr' else 'الكل' }}</option>{% for rating_value in [3,4,4.5] %}<option value="{{ rating_value }}" {% if minimum_rating == rating_value %}selected{% endif %}>{{ rating_value }} ★</option>{% endfor %}</select></label>
+    <label>{{ 'Trier par' if language == 'fr' else 'ترتيب حسب' }}<select name="sort"><option value="newest" {% if sort == 'newest' %}selected{% endif %}>{{ 'Nouveautés' if language == 'fr' else 'الأحدث' }}</option><option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>{{ 'Prix croissant' if language == 'fr' else 'السعر: من الأقل' }}</option><option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>{{ 'Prix décroissant' if language == 'fr' else 'السعر: من الأعلى' }}</option><option value="rating" {% if sort == 'rating' %}selected{% endif %}>{{ 'Meilleures notes' if language == 'fr' else 'الأعلى تقييماً' }}</option></select></label>
+    <button class="pill-button dark-pill" type="submit">{{ 'Filtrer' if language == 'fr' else 'تصفية النتائج' }}</button>
+  </form>
+  {% if products %}{{ product_cards(products) }}{% else %}<p class="empty-results">{{ 'Aucun produit ne correspond à ces critères.' if language == 'fr' else 'لا توجد منتجات مطابقة لهذه المعايير.' }}</p>{% endif %}
+</section>
+{% endif %}
+
+{% if featured %}<section class="container premium-section"><div class="premium-section-heading"><div><span class="section-kicker">{{ 'Sélection du moment' if language == 'fr' else 'اختيارات مميزة من المتجر' }}</span><h2>{{ 'Meilleures ventes' if language == 'fr' else 'الأكثر مبيعاً' }}</h2></div><span class="heading-sparkle">✳</span></div>{{ product_cards(featured, 'featured-products') }}</section>{% endif %}
+{% if trending %}<section class="container premium-section"><div class="premium-section-heading"><div><span class="section-kicker">{{ 'Les favoris du moment' if language == 'fr' else 'اختيارات رائجة' }}</span><h2>{{ 'Tendances' if language == 'fr' else 'الأكثر رواجاً' }}</h2></div></div>{{ product_cards(trending) }}</section>{% endif %}
+{% if new_arrivals %}<section class="container premium-section"><div class="premium-section-heading"><div><span class="section-kicker">{{ 'Tout juste arrivés' if language == 'fr' else 'وصل حديثاً إلى المتجر' }}</span><h2>{{ 'Nouveautés' if language == 'fr' else 'منتجات جديدة' }}</h2></div></div>{{ product_cards(new_arrivals) }}</section>{% endif %}
+{% if deals %}<section class="container premium-section" id="offers"><div class="premium-section-heading"><div><span class="section-kicker">{{ 'À prix doux' if language == 'fr' else 'فرص للتوفير' }}</span><h2>{{ 'Offres spéciales' if language == 'fr' else 'عروض خاصة' }}</h2></div></div>{{ product_cards(deals) }}</section>{% endif %}
+
+{% if beauty_category %}
+<section class="container beauty-feature-section">
+  <div class="beauty-feature-banner">
+    <img src="{{ category_image_defaults['beauty'][0] }}" alt="" loading="lazy">
+    <div><span class="section-kicker">{{ 'Beauté et bien-être' if language == 'fr' else 'عناية وجمال كل يوم' }}</span><h2>{{ 'Les essentiels beauté' if language == 'fr' else 'الجمال والعناية' }}</h2><p>{{ 'Découvrez notre sélection de soins, de parfums et de maquillage.' if language == 'fr' else 'منتجات للعناية بالبشرة والشعر، العطور، المكياج والعناية بالجسم.' }}</p><a class="pill-button dark-pill" href="{{ url_for('index', category=beauty_category.slug) }}">{{ 'Voir la sélection' if language == 'fr' else 'اكتشف المجموعة' }} ↗</a></div>
+  </div>
+  <nav class="beauty-type-grid" aria-label="{{ 'Univers beauté' if language == 'fr' else 'أقسام الجمال والعناية' }}">
+    {% for beauty_kind, title_ar, title_fr, image_url in [
+    ('skincare','العناية بالبشرة','Soins de la peau','/static/images/beauty-model-skincare.jpg'),
+    ('haircare','العناية بالشعر','Soins capillaires','/static/images/beauty-hair-styling.jpg'),
+    ('fragrance','العطور','Parfums','/static/images/beauty-perfume-minimal.jpg'),
+    ('makeup','المكياج','Maquillage','/static/images/beauty-makeup.jpg'),
+    ('bodycare','العناية بالجسم','Soins du corps','/static/images/beauty-model-facial.jpg')
+    ] %}
+    <a class="beauty-type-card" href="{{ url_for('index', category=beauty_category.slug, beauty_type=beauty_kind) }}"><img src="{{ image_url }}" alt="" loading="lazy"><span>{{ title_fr if language == 'fr' else title_ar }}</span></a>
+    {% endfor %}
+  </nav>
+  {% if beauty_products %}<div class="premium-section-heading beauty-products-heading"><div><span class="section-kicker">{{ 'Nos essentiels' if language == 'fr' else 'اختياراتنا للعناية بك' }}</span><h2>{{ 'Beauté & soin' if language == 'fr' else 'منتجات الجمال والعناية' }}</h2></div></div>{{ product_cards(beauty_products[:8], 'beauty-products') }}{% endif %}
+</section>
+{% endif %}
+
+{% if recommended %}<section class="container premium-section"><div class="premium-section-heading"><div><span class="section-kicker">{{ 'À découvrir' if language == 'fr' else 'اختيرت لك بعناية' }}</span><h2>{{ 'Nos recommandations' if language == 'fr' else 'منتجات مقترحة' }}</h2></div></div>{{ product_cards(recommended, 'recommended-products') }}</section>{% endif %}
+
+<section class="container beauty-promo-section" aria-label="{{ 'Promotions beauté' if language == 'fr' else 'عروض الجمال والعناية' }}">
+  <div class="premium-section-heading"><div><span class="section-kicker">{{ 'Nos univers beauté' if language == 'fr' else 'جمال وعناية بتفاصيل تحبيها' }}</span><h2>{{ 'Découvrez nos sélections' if language == 'fr' else 'اختاري روتينك المفضل' }}</h2></div></div>
+  <div class="beauty-promo-grid">
+    <a class="beauty-promo-card" href="{{ url_for('index', category=beauty_category.slug if beauty_category else 'beauty', beauty_type='skincare') }}"><img src="/static/images/beauty-model-facial.jpg" alt="" loading="lazy"><span class="beauty-promo-shade"></span><span class="beauty-promo-copy"><strong>{{ 'Soins de la peau' if language == 'fr' else 'العناية بالبشرة' }}</strong><small>{{ 'Des essentiels pour votre routine' if language == 'fr' else 'اختيارات ناعمة لروتينك اليومي' }}</small><span class="pill-button dark-pill">{{ 'Acheter maintenant' if language == 'fr' else 'تسوق الآن' }} ↗</span></span></a>
+    <a class="beauty-promo-card" href="{{ url_for('index', category=beauty_category.slug if beauty_category else 'beauty', beauty_type='makeup') }}"><img src="/static/images/beauty-makeup.jpg" alt="" loading="lazy"><span class="beauty-promo-shade"></span><span class="beauty-promo-copy"><strong>{{ 'Maquillage' if language == 'fr' else 'المكياج' }}</strong><small>{{ 'Les essentiels beauté du quotidien' if language == 'fr' else 'لمسات بسيطة لإطلالة متألقة' }}</small><span class="pill-button dark-pill">{{ 'Acheter maintenant' if language == 'fr' else 'تسوق الآن' }} ↗</span></span></a>
+    <a class="beauty-promo-card" href="{{ url_for('index', category=beauty_category.slug if beauty_category else 'beauty', beauty_type='fragrance') }}"><img src="/static/images/beauty-perfume-minimal.jpg" alt="" loading="lazy"><span class="beauty-promo-shade"></span><span class="beauty-promo-copy"><strong>{{ 'Parfums' if language == 'fr' else 'العطور' }}</strong><small>{{ 'Une touche raffinée pour chaque jour' if language == 'fr' else 'نفحات أنيقة لكل مناسبة' }}</small><span class="pill-button dark-pill">{{ 'Acheter maintenant' if language == 'fr' else 'تسوق الآن' }} ↗</span></span></a>
+  </div>
+</section>
+{% endblock %}

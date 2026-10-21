@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}إعدادات المتجر{% endblock %}
+{% block content %}
+<section class="container admin-page">
+  <h1>إعدادات المتجر</h1>
+  <nav class="admin-nav" aria-label="قائمة الإدارة">
+    <a href="{{ url_for('admin_dashboard') }}">لوحة التحكم</a>
+    <a href="{{ url_for('admin_coupons') }}">قسائم التخفيض</a>
+    <a href="{{ url_for('admin_content') }}">المحتوى والبنرات</a>
+  </nav>
+  <form class="admin-add-form settings-form" method="post">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {% for key,label in [
+      ('store_name','اسم المتجر'),
+      ('logo_url','رابط الشعار'),
+      ('favicon_url','رابط أيقونة الموقع'),
+      ('phone','رقم الهاتف'),
+      ('email','البريد الإلكتروني'),
+      ('whatsapp','رقم واتساب'),
+      ('store_address','عنوان المتجر'),
+      ('facebook','رابط فيسبوك'),
+      ('instagram','رابط إنستغرام'),
+      ('tiktok','رابط تيك توك'),
+      ('stat_rating','قيمة التقييم'),
+      ('stat_rating_label','وصف التقييم بالعربية'),
+      ('stat_rating_label_fr','وصف التقييم بالفرنسية'),
+      ('stat_dispatch','مدة التجهيز والشحن'),
+      ('stat_dispatch_label','وصف الشحن بالعربية'),
+      ('stat_dispatch_label_fr','وصف الشحن بالفرنسية'),
+      ('stat_customers','عدد العملاء'),
+      ('stat_customers_label','وصف العملاء بالعربية'),
+      ('stat_customers_label_fr','وصف العملاء بالفرنسية'),
+      ('promo_coupon','نص العرض الترويجي الأول'),
+      ('promo_cod','نص العرض الترويجي الثاني'),
+      ('promo_consultation','نص العرض الترويجي الثالث'),
+      ('announcement','نص الإعلان بالعربية'),
+      ('announcement_fr','نص الإعلان بالفرنسية'),
+      ('shipping_fee','رسوم التوصيل الافتراضية (درهم)'),
+      ('free_delivery_threshold','الحد الأدنى للتوصيل المجاني (درهم)'),
+      ('delivery_days','مدة التوصيل المتوقعة'),
+      ('city_fees','رسوم التوصيل حسب المدينة بصيغة JSON، مثال {"الدار البيضاء":30}'),
+      ('payment_cod','تفعيل الدفع عند الاستلام؟ (1 أو 0)'),
+      ('payment_card','تفعيل الدفع بالبطاقة؟ (1 أو 0)'),
+      ('payment_transfer','تفعيل التحويل البنكي؟ (1 أو 0)'),
+      ('seo_title','عنوان نتائج البحث'),
+      ('seo_description','وصف نتائج البحث'),
+      ('facebook_pixel','معرّف Meta Pixel'),
+      ('tiktok_pixel','معرّف TikTok Pixel'),
+      ('ga_id','معرّف Google Analytics'),
+      ('gtm_id','معرّف Google Tag Manager')
+    ] %}
+      <label>
+        {{ label }}
+        {% if key in ['announcement','store_address','city_fees','seo_description','promo_coupon','promo_cod','promo_consultation'] %}
+          <textarea name="{{ key }}">{{ store_setting(key) }}</textarea>
+        {% else %}
+          <input name="{{ key }}" value="{{ store_setting(key) }}">
+        {% endif %}
+      </label>
+    {% endfor %}
+    <label>اللون الأساسي <input type="color" name="primary_color" value="{{ theme_primary }}"></label>
+    <label>لون التمييز والأسعار <input type="color" name="accent_color" value="{{ theme_accent }}"></label>
+    <label>لون خلفية المتجر <input type="color" name="background_color" value="{{ theme_background }}"></label>
+    <small id="theme-color-note">تُستخدم درجات البرتقالي والخلفية الفاتحة افتراضياً، ويمكن تعديلها من هنا.</small>
+    <label>
+      تغيير كلمة مرور الإدارة
+      <input type="password" name="admin_password" minlength="10" autocomplete="new-password" placeholder="اتركه فارغاً للإبقاء على كلمة المرور الحالية">
+    </label>
+    <button class="button button-primary admin-wide" type="submit">حفظ الإعدادات</button>
+  </form>
+  <form method="post" action="{{ url_for('admin_backup') }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <button class="button button-outline" type="submit">إنشاء نسخة احتياطية من قاعدة البيانات</button>
+  </form>
+</section>
+{% endblock %}

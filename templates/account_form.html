@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Créer un compte' if mode == 'register' and language == 'fr' else 'إنشاء حساب' if mode == 'register' else 'Connexion' if language == 'fr' else 'تسجيل الدخول' }} — {{ store_name }}{% endblock %}
+{% block content %}
+<section class="container premium-page">
+  <div class="premium-account-card auth-card">
+    <span class="section-kicker">{{ store_name }}</span>
+    <h1>{{ 'Créer votre compte' if mode == 'register' and language == 'fr' else 'إنشاء حساب جديد' if mode == 'register' else 'Connexion' if language == 'fr' else 'تسجيل الدخول إلى حسابك' }}</h1>
+    <p>{{ 'Retrouvez vos commandes, adresses et favoris.' if language == 'fr' else 'تابع طلباتك، وأدر عناوينك، واحتفظ بمنتجاتك المفضلة في مكان واحد.' }}</p>
+    <form class="premium-account-form" method="post">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      {% if mode == 'register' %}
+      <label>{{ t('full_name') }}<input name="full_name" autocomplete="name" required></label>
+      <label>{{ t('phone') }}<input name="phone" type="tel" autocomplete="tel"></label>
+      {% endif %}
+      <label>{{ 'Adresse e-mail' if language == 'fr' else 'البريد الإلكتروني' }}<input name="email" type="email" autocomplete="email" required></label>
+      <label>{{ 'Mot de passe' if language == 'fr' else 'كلمة المرور' }}<input name="password" type="password" autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}" required minlength="{{ 8 if mode == 'register' else 1 }}"></label>
+      <button class="pill-button dark-pill" type="submit">{{ 'Créer mon compte' if mode == 'register' and language == 'fr' else 'إنشاء الحساب' if mode == 'register' else 'Se connecter' if language == 'fr' else 'تسجيل الدخول' }} ↗</button>
+    </form>
+    <a class="auth-switch" href="{{ url_for('account_login' if mode == 'register' else 'account_register') }}">{{ 'J’ai déjà un compte' if mode == 'register' and language == 'fr' else 'لديك حساب؟ سجّل الدخول' if mode == 'register' else 'Créer un compte' if language == 'fr' else 'إنشاء حساب جديد' }}</a>
+  </div>
+</section>
+{% endblock %}

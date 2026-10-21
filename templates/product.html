@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name_fr or product.name }} — {{ store_name }}{% endblock %}
+{% block og_title %}{{ product.name_fr or product.name }} — {{ store_name }}{% endblock %}
+{% block content %}
+<div class="container premium-breadcrumb"><a href="{{ url_for('index') }}">{{ t('home') }}</a><span>›</span><a href="{{ url_for('index', category=product.category.slug) }}">{{ product.category.name_fr if language == 'fr' else product.category.name_ar }}</a><span>›</span><span>{{ product.name_fr or product.name }}</span></div>
+<section class="container premium-detail-card detail-card" data-value="{{ product.price }}" data-item-name="{{ product.name_fr or product.name }}">
+  {% set product_fallback = {'beauty':'/static/images/beauty-model-facial.jpg','home':'/static/images/home-kitchen-2.jpg','clothing':'/static/images/clothing.jpg','accessories':'/static/images/accessories-sunglasses.jpg','electronics':'/static/images/electronics.jpg'}.get(product.category.slug, '/static/images/electronics.jpg') %}
+  <div class="premium-detail-gallery">
+    <div class="premium-detail-image"><img src="{{ product.image_url if product.image_url and 'placeholder' not in product.image_url and 'images.unsplash.com' not in product.image_url else product_fallback }}" data-fallback="{{ product_fallback }}" alt="{{ product.name_fr or product.name }}{{ '' if product.image_url and 'placeholder' not in product.image_url and 'images.unsplash.com' not in product.image_url else (' — photo illustrative de la catégorie' if language == 'fr' else ' — صورة توضيحية للفئة') }}" fetchpriority="high">{% if product.discount_percent %}<span class="product-flag">-{{ product.discount_percent }}%</span>{% endif %}</div>
+    <div class="premium-thumbnails">{% for image in product.images %}<img src="{{ image if 'placeholder' not in image and 'images.unsplash.com' not in image else product_fallback }}" alt="{{ product.name_fr or product.name }}" loading="lazy">{% endfor %}</div>
+  </div>
+  <div class="premium-detail-info">
+    <div class="product-meta"><span class="product-rating"><span>★★★★★</span> {{ product.rating }} ({{ product.reviews }})</span><span class="product-category-chip">{{ product.category.name_fr if language == 'fr' else product.category.name_ar }}</span></div>
+    <h1>{{ product.name_fr or product.name if language == 'fr' else product.name }}</h1>
+    <p class="seller">{{ 'Vendu par' if language == 'fr' else 'البائع:' }} {{ product.seller or store_name }}</p>
+    <div class="premium-price-row"><strong>{{ product.price|money }} {{ currency }}</strong>{% if product.old_price > product.price %}<del>{{ product.old_price|money }} {{ currency }}</del><span class="discount-note">-{{ product.discount_percent }}%</span>{% endif %}</div>
+    <p class="stock-line">{{ 'En stock' if language == 'fr' else 'متوفر في المخزون' }} · {{ product.stock }}</p>
+    <p class="detail-description">{{ product.description_fr if language == 'fr' and product.description_fr else product.description }}</p>
+    <div class="delivery-note">♡ {{ 'Livraison estimée entre' if language == 'fr' else 'التوصيل المتوقع بين' }} {{ delivery_start.strftime('%d/%m/%Y') }} و {{ delivery_end.strftime('%d/%m/%Y') }}</div>
+    {% if product.stock > 0 %}
+    <div class="detail-actions">
+      <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="post" class="detail-add-form premium-detail-add" data-value="{{ product.price }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><label for="quantity">{{ 'Quantité' if language == 'fr' else 'الكمية' }}</label><input id="quantity" name="quantity" type="number" min="1" max="{{ product.stock }}" value="1"><button type="submit" class="pill-button product-add-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 1.9-1.4L21 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>{{ t('add_cart') }}</button></form>
+      <form action="{{ url_for('buy_now', product_id=product.id) }}" method="post" class="buy-now-form"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="quantity" value="1"><button type="submit" class="pill-button outline-pill">{{ 'Commander maintenant' if language == 'fr' else 'اطلب الآن' }}</button></form>
+    </div>
+    {% endif %}
+    {% if current_user.is_authenticated %}<form action="{{ url_for('toggle_wishlist', product_id=product.id) }}" method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="pill-button outline-pill" type="submit">♡ {{ 'Ajouter aux favoris' if language == 'fr' else 'أضف للمفضلة' }}</button></form>{% endif %}
+    {% if language == 'fr' and product.description_fr %}<p class="detail-description secondary-description">{{ product.description_fr }}</p>{% endif %}
+  </div>
+</section>
+<section class="container premium-section product-reviews" id="reviews">
+  <div class="premium-section-heading"><div><span class="section-kicker">{{ 'Avis vérifiés' if language == 'fr' else 'آراء العملاء' }}</span><h2>{{ 'Notes et avis' if language == 'fr' else 'التقييمات والمراجعات' }} ({{ reviews|length }})</h2></div></div>
+  {% if current_user.is_authenticated and can_review %}
+  <form class="review-form premium-account-card" method="post" action="{{ url_for('add_product_review', slug=product.slug) }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <label>{{ 'Votre note' if language == 'fr' else 'تقييمك' }}<select name="rating" required><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option><option value="1">★☆☆☆☆</option></select></label>
+    <label>{{ 'Votre avis' if language == 'fr' else 'اكتب رأيك' }}<textarea name="comment" minlength="5" maxlength="2000" rows="4" required></textarea></label>
+    <button class="pill-button dark-pill" type="submit">{{ 'Publier mon avis' if language == 'fr' else 'إرسال التقييم' }}</button>
+  </form>
+  {% elif not current_user.is_authenticated %}
+  <p class="review-note">{{ 'Connectez-vous après réception de votre commande pour laisser un avis.' if language == 'fr' else 'سجّل الدخول بعد استلام الطلب لإضافة تقييم موثوق.' }} <a href="{{ url_for('account_login') }}">{{ 'Connexion' if language == 'fr' else 'تسجيل الدخول' }}</a></p>
+  {% endif %}
+  <div class="review-list">
+    {% for review in reviews %}
+    <article class="review-card"><div><b>{{ review.user.full_name }}</b><span class="review-stars">{{ '★' * review.rating }}{{ '☆' * (5-review.rating) }}</span></div><p>{{ review.comment }}</p><small>{{ review.created_at.strftime('%Y-%m-%d') }}</small></article>
+    {% else %}
+    <p class="review-note">{{ 'Aucun avis pour le moment.' if language == 'fr' else 'لا توجد مراجعات بعد.' }}</p>
+    {% endfor %}
+  </div>
+</section>
+{% if related %}<section class="container premium-section"><div class="premium-section-heading"><div><span class="section-kicker">{{ 'À découvrir aussi' if language == 'fr' else 'منتجات قد تهمك' }}</span><h2>{{ 'Dans la même collection' if language == 'fr' else 'منتجات من نفس التصنيف' }}</h2></div></div><div class="premium-product-grid">{% for item in related %}<article class="premium-product-card"><a class="product-image-wrap" href="{{ url_for('product_detail', slug=item.slug) }}"><img src="{{ item.image_url if item.image_url and 'placeholder' not in item.image_url and 'images.unsplash.com' not in item.image_url else product_fallback }}" data-fallback="{{ product_fallback }}" alt="{{ item.name_fr or item.name }}{{ '' if item.image_url and 'placeholder' not in item.image_url and 'images.unsplash.com' not in item.image_url else (' — photo illustrative de la catégorie' if language == 'fr' else ' — صورة توضيحية للفئة') }}" loading="lazy"></a><div class="premium-product-info"><a class="product-title" href="{{ url_for('product_detail', slug=item.slug) }}">{{ item.name_fr or item.name }}</a><div class="premium-price-row"><strong>{{ item.price|money }} {{ currency }}</strong></div></div></article>{% endfor %}</div></section>{% endif %}
+{% endblock %}

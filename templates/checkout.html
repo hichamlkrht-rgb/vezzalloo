@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Finaliser la commande' if language == 'fr' else 'إتمام الطلب' }} — {{ store_name }}{% endblock %}
+{% block content %}
+<section class="container premium-page premium-checkout-page" data-value="{{ total }}">
+  <div class="premium-page-heading"><span class="section-kicker">{{ 'Dernière étape' if language == 'fr' else 'خطوة أخيرة' }}</span><h1>{{ 'Finaliser la commande' if language == 'fr' else 'تأكيد الطلب' }}</h1></div>
+  <div class="checkout-steps"><span class="active"><i>01</i>{{ 'Adresse' if language == 'fr' else 'العنوان' }}</span><span class="active"><i>02</i>{{ 'Livraison' if language == 'fr' else 'التوصيل' }}</span><span class="active"><i>03</i>{{ 'Paiement' if language == 'fr' else 'الأداء' }}</span></div>
+  <div class="premium-cart-layout">
+    <div class="premium-checkout-main">
+      <form action="{{ url_for('checkout') }}" method="post" class="premium-checkout-form"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <fieldset class="premium-form-section"><legend><span>01</span>{{ t('delivery_info') }}</legend>
+          <div class="premium-form-grid"><label>{{ t('full_name') }}<input name="full_name" autocomplete="name" required></label><label>{{ t('phone') }}<input name="phone" type="tel" autocomplete="tel" required></label><label>{{ t('city') }}<input name="city" autocomplete="address-level2" required></label><label class="full-field">{{ t('address') }}<input name="address" autocomplete="street-address" required></label><label class="full-field">{{ 'E-mail (facultatif)' if language == 'fr' else 'البريد الإلكتروني (اختياري)' }}<input name="email" type="email"></label>
+          {% if addresses %}<label class="full-field">{{ 'Adresse enregistrée' if language == 'fr' else 'عنوان محفوظ' }}<select id="saved-address"><option value="">{{ 'Choisir une adresse' if language == 'fr' else 'اختر عنواناً' }}</option>{% for address in addresses %}<option data-city="{{ address.city }}" data-address="{{ address.address }}" data-phone="{{ address.phone }}">{{ address.title }} · {{ address.city }}</option>{% endfor %}</select></label>{% endif %}</div>
+        </fieldset>
+        <fieldset class="premium-form-section"><legend><span>02</span>{{ 'Mode de livraison' if language == 'fr' else 'طريقة التوصيل' }}</legend><div class="delivery-choice"><span>♡</span><div><b>{{ 'Livraison à domicile' if language == 'fr' else 'التوصيل إلى المنزل' }}</b><small>{{ 'Délai estimé' if language == 'fr' else 'المدة المتوقعة' }}: {{ store_setting('delivery_days', '2-5 أيام') }}</small></div><strong>{{ shipping|money }} DH</strong></div><div class="checkout-recap">{% for item in items %}<div class="checkout-recap-item"><img src="{{ item.product.image_url }}" alt="" loading="lazy"><span>{{ item.product.name_fr or item.product.name if language == 'fr' else item.product.name }}<small>{{ 'Qté' if language == 'fr' else 'الكمية' }}: {{ item.quantity }}</small></span><b>{{ item.subtotal|money }} DH</b></div>{% endfor %}</div></fieldset>
+        <fieldset class="premium-form-section"><legend><span>03</span>{{ t('payment') }}</legend>
+          {% if store_setting('payment_cod','1') == '1' %}<label class="premium-payment-choice"><input type="radio" name="payment" value="cod" checked><span><b>{{ t('cod') }}</b><small>{{ 'Réglez à la réception' if language == 'fr' else 'يتم الدفع عند استلام الطلب' }}</small></span><i>💵</i></label>{% endif %}
+          {% if store_setting('payment_card','0') == '1' %}<label class="premium-payment-choice"><input type="radio" name="payment" value="card"><span><b>{{ 'Carte bancaire' if language == 'fr' else 'بطاقة بنكية' }}</b></span><i>💳</i></label>{% endif %}
+          {% if store_setting('payment_transfer','0') == '1' %}<label class="premium-payment-choice"><input type="radio" name="payment" value="transfer"><span><b>{{ 'Virement bancaire' if language == 'fr' else 'تحويل بنكي' }}</b></span><i>↗</i></label>{% endif %}
+          <label class="billing-address">{{ 'Adresse de facturation (facultatif)' if language == 'fr' else 'عنوان الفاتورة (اختياري)' }}<input name="billing_address"></label>
+          <label class="premium-terms"><input type="checkbox" name="terms" value="yes" required><span>{{ t('terms') }} — <a href="{{ url_for('page', slug='terms') }}">{{ 'Lire' if language == 'fr' else 'اقرأ' }}</a></span></label>
+        </fieldset>
+        <button class="pill-button dark-pill premium-place-order" type="submit">{{ t('place_order') }} · {{ total|money }} {{ currency }} <span>↗</span></button>
+      </form>
+    </div>
+    <aside class="premium-summary premium-checkout-summary"><h2>{{ 'Votre commande' if language == 'fr' else 'ملخص الطلب' }}</h2><div class="summary-line"><span>{{ t('subtotal') }}</span><b>{{ subtotal|money }} DH</b></div>{% if discount %}<div class="summary-line"><span>{{ 'Réduction' if language == 'fr' else 'التخفيض' }}</span><b>-{{ discount|money }} DH</b></div>{% endif %}<div class="summary-line"><span>{{ t('shipping') }}</span><b>{{ shipping|money }} DH</b></div><div class="summary-total"><span>{{ t('total') }}</span><strong>{{ total|money }} DH</strong></div><p class="summary-cod">♡ {{ 'Paiement sécurisé à la livraison' if language == 'fr' else 'الدفع عند الاستلام بكل سهولة' }}</p></aside>
+  </div>
+</section>
+<script>document.addEventListener('DOMContentLoaded',()=>{const s=document.getElementById('saved-address');if(s)s.addEventListener('change',()=>{const o=s.selectedOptions[0];if(o.dataset.city){document.querySelector('[name=city]').value=o.dataset.city;document.querySelector('[name=address]').value=o.dataset.address;document.querySelector('[name=phone]').value=o.dataset.phone}})});</script>
+{% endblock %}

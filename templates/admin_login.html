@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}دخول الإدارة — {{ store_name }}{% endblock %}
+{% block content %}
+<section class="container admin-login-wrap"><form class="admin-login" method="post" action="{{ url_for('admin_login') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><span class="section-kicker">لوحة التسيير</span><h1>دخول الإدارة</h1><p>أدخل كلمة مرور الإدارة للمتابعة.</p><label>كلمة المرور<input type="password" name="password" autocomplete="current-password" required autofocus></label><button class="button button-primary" type="submit">دخول آمن</button></form></section>
+{% endblock %}

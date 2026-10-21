@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block title %}{{ page_data.title }} — {{ store_name }}{% endblock %}{% block content %}<article class="container content-page"><h1>{{ page_data.title }}</h1><div>{{ page_data.body|e|replace('\n','<br>')|safe }}</div></article>{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}رسائل العملاء — {{ store_name }}{% endblock %}
+{% block content %}
+<section class="container admin-page">
+  <h1>رسائل العملاء</h1>
+  <nav class="admin-nav" aria-label="قائمة الإدارة">
+    <a href="{{ url_for('admin_dashboard') }}">لوحة التحكم</a>
+    <a href="{{ url_for('admin_customers') }}">العملاء</a>
+    <a href="{{ url_for('admin_settings') }}">الإعدادات</a>
+  </nav>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>التاريخ</th><th>العميل</th><th>الموضوع والرسالة</th><th>الحالة</th></tr></thead>
+      <tbody>
+        {% for message in messages %}
+        <tr>
+          <td>{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ message.name }}<small><a href="mailto:{{ message.email }}">{{ message.email }}</a></small>{% if message.phone %}<small>{{ message.phone }}</small>{% endif %}</td>
+          <td><b>{{ message.subject }}</b><p>{{ message.message }}</p></td>
+          <td>
+            <form method="post" action="{{ url_for('admin_message_status', message_id=message.id) }}">
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+              <select name="status">
+                <option value="new" {% if message.status == 'new' %}selected{% endif %}>جديدة</option>
+                <option value="read" {% if message.status == 'read' %}selected{% endif %}>تم الاطلاع</option>
+                <option value="resolved" {% if message.status == 'resolved' %}selected{% endif %}>تمت المعالجة</option>
+              </select>
+              <button class="button button-outline" type="submit">حفظ</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4">لا توجد رسائل حتى الآن.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

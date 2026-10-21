@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="{{ 'ar' if request.endpoint and request.endpoint.startswith('admin') else language }}" dir="{{ 'rtl' if language == 'ar' or (request.endpoint and request.endpoint.startswith('admin')) else 'ltr' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="{{ theme_primary }}">
+  <meta name="description" content="{{ store_setting('seo_description', 'منتجات مختارة بعناية وأسعار مناسبة، مع التوصيل إلى جميع مدن المغرب.') }}">
+  <meta property="og:title" content="{% block og_title %}{{ store_setting('seo_title', store_name) }}{% endblock %}">
+  <meta property="og:description" content="{{ store_setting('seo_description', 'تسوق بثقة مع Vezzallo') }}">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="{{ store_setting('logo_url', '') }}">
+  <title>{% block title %}{{ store_name }} — تسوق بثقة{% endblock %}</title>
+  <link rel="icon" href="{{ store_setting('favicon_url', '/static/placeholder.png') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='marketplace.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='premium.css') }}">
+  {% if store_setting('ga_id') %}<script async src="https://www.googletagmanager.com/gtag/js?id={{ store_setting('ga_id') }}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','{{ store_setting("ga_id") }}');</script>{% endif %}
+  {% if store_setting('gtm_id') %}<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ store_setting("gtm_id") }}');</script>{% endif %}
+  {% if store_setting('facebook_pixel') %}<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ store_setting("facebook_pixel") }}');fbq('track','PageView');</script>{% endif %}
+  {% if store_setting('tiktok_pixel') %}<script>!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie'];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.load=function(e){var s=d.createElement('script');s.async=true;s.src='https://analytics.tiktok.com/i18n/pixel/events.js?sdkid='+e;d.head.appendChild(s)};ttq.load('{{ store_setting("tiktok_pixel") }}');ttq.page()}(window,document,'ttq');</script>{% endif %}
+</head>
+<body style="--store-primary: {{ theme_primary }}; --teal: {{ theme_primary }}; --teal-dark: color-mix(in srgb, {{ theme_primary }} 84%, black); --premium-accent: {{ theme_accent }}; --premium-paper: {{ theme_background }}; --premium-accent-soft: color-mix(in srgb, {{ theme_accent }} 14%, white)">
+  <div class="announcement">{{ store_setting('announcement_fr', 'Livraison gratuite partout au Maroc') if language == 'fr' else store_setting('announcement', 'توصيل مجاني إلى جميع أنحاء المغرب') }}</div>
+  <header class="premium-header">
+    <div class="premium-header-inner">
+      <button class="mobile-menu-toggle" id="menu-toggle" type="button" aria-label="{{ 'Ouvrir le menu' if language == 'fr' else 'فتح القائمة' }}" aria-expanded="false" aria-controls="nav-bar">
+        <span></span><span></span>
+      </button>
+      <a class="brand premium-brand" href="{{ url_for('index') }}">
+        {% if store_setting('logo_url') %}<img class="brand-logo" src="{{ store_setting('logo_url') }}" alt="{{ store_name }}">{% else %}<span class="brand-mark">V</span>{% endif %}
+        <span>{{ store_name }}<small>{{ 'Achetez en toute confiance' if language == 'fr' else 'تسوق بثقة واطمئنان' }}</small></span>
+      </a>
+      <form class="header-search" action="{{ url_for('index') }}" data-search-form>
+        <label class="sr-only" for="header-search-input">{{ t('search') }}</label>
+        <input id="header-search-input" name="q" type="search" autocomplete="off" placeholder="{{ 'Rechercher un produit...' if language == 'fr' else 'ابحث عن منتج...' }}" value="{{ search|default('') }}">
+        <button type="submit" aria-label="{{ t('search') }}">⌕</button>
+        <div class="suggestions search-suggestions"></div>
+      </form>
+      <div class="header-actions premium-actions">
+        <a class="icon-button header-account-link" href="{{ url_for('account') if current_user.is_authenticated else url_for('account_login') }}" aria-label="{{ t('account') }}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-1.5a7 7 0 0 1 14 0V21Z"/></svg>
+        </a>
+        <a class="icon-button header-wishlist-link" href="{{ (url_for('account') ~ '#wishlist') if current_user.is_authenticated else url_for('account_login') }}" aria-label="{{ 'Favoris' if language == 'fr' else 'المفضلة' }}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 5.2-8.8 10-8.8 10s-8.8-4.8-8.8-10A4.6 4.6 0 0 1 12 6.5a4.6 4.6 0 0 1 8.8 2.3Z"/></svg>
+        </a>
+        <a class="icon-button" href="{{ url_for('cart') }}" aria-label="{{ t('cart') }}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 1.9-1.4L21 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+          <b class="cart-badge">{{ cart_count }}</b>
+        </a>
+        <button class="icon-button menu-trigger" id="search-toggle" type="button" aria-label="{{ t('search') }}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6L12 2Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg>
+        </button>
+      </div>
+    </div>
+    <nav class="desktop-category-nav" aria-label="{{ 'Catégories' if language == 'fr' else 'التصنيفات' }}">
+      {% for item in categories %}
+      <a href="{{ url_for('index', category=item.slug) }}">{{ item.name_fr if language == 'fr' else {'beauty': 'الجمال والعناية', 'home': 'المنزل والمطبخ'}.get(item.slug, item.name_ar) }}</a>
+      {% endfor %}
+    </nav>
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+    <nav id="nav-bar" class="menu-drawer" aria-label="{{ 'Menu principal' if language == 'fr' else 'القائمة الرئيسية' }}">
+      <div class="drawer-heading"><span>{{ 'Explorer la boutique' if language == 'fr' else 'تسوق واكتشف' }}</span></div>
+      <form class="search-form drawer-search" action="{{ url_for('index') }}" data-search-form>
+        <label class="sr-only" for="site-search">{{ t('search') }}</label><span>⌕</span>
+        <input id="site-search" name="q" type="search" autocomplete="off" placeholder="{{ 'Rechercher un produit...' if language == 'fr' else 'ابحث عن منتج...' }}" value="{{ search|default('') }}">
+        <button type="submit">{{ t('search') }}</button><div class="suggestions search-suggestions"></div>
+      </form>
+      <div class="drawer-links">
+        <a href="{{ url_for('index') }}">{{ t('home') }}</a>
+        {% for item in categories %}<a href="{{ url_for('index', category=item.slug) }}">{{ item.name_fr if language == 'fr' else {'beauty': 'الجمال والعناية', 'home': 'المنزل والمطبخ'}.get(item.slug, item.name_ar) }} <span>{{ item.icon }}</span></a>{% endfor %}
+        <a href="{{ url_for('track_order') }}">{{ t('track') }}</a>
+        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('account_login') }}">{{ t('account') }}</a>
+        <a href="{{ url_for('language', lang='fr' if language == 'ar' else 'ar') }}">{{ 'العربية' if language == 'fr' else 'Français' }} <span>文</span></a>
+      </div>
+      <p class="drawer-note">{{ 'Paiement à la livraison · Livraison partout au Maroc' if language == 'fr' else 'الدفع عند الاستلام · التوصيل إلى جميع مدن المغرب' }}</p>
+    </nav>
+  </header>
+  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="container flash-stack">{% for kind, message in messages %}<div class="flash flash-{{ kind }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+  <main>{% block content %}{% endblock %}</main>
+  {% if not request.endpoint or request.endpoint not in ['admin_dashboard', 'admin_settings', 'admin_coupons', 'admin_content', 'admin_customers', 'admin_messages', 'admin_login'] %}
+  <section class="trust-row container premium-trust"><div><span>♡</span><b>{{ t('trust_refund') }}</b></div><div><span>✦</span><b>{{ t('trust_offers') }}</b></div><div><span>⌖</span><b>{{ t('trust_delivery') }}</b></div></section>
+  {% endif %}
+  <footer class="site-footer premium-footer">
+    <div class="container footer-grid">
+      <div class="footer-intro"><a class="brand footer-brand" href="{{ url_for('index') }}">{% if store_setting('logo_url') %}<img class="brand-logo" src="{{ store_setting('logo_url') }}" alt="{{ store_name }}">{% else %}<span class="brand-mark">V</span>{% endif %}<span>{{ store_name }}</span></a><p>{{ 'Des trouvailles choisies avec soin, livrées chez vous.' if language == 'fr' else 'اختيارات تفرحك، توصيل حتى لباب دارك.' }}</p><div class="social-links">{% if store_setting('instagram') %}<a href="{{ store_setting('instagram') }}" aria-label="Instagram" rel="noopener">ig</a>{% endif %}{% if store_setting('facebook') %}<a href="{{ store_setting('facebook') }}" aria-label="Facebook" rel="noopener">f</a>{% endif %}{% if store_setting('tiktok') %}<a href="{{ store_setting('tiktok') }}" aria-label="TikTok" rel="noopener">♪</a>{% endif %}</div></div>
+      <div><b>{{ 'Liens utiles' if language == 'fr' else 'روابط مفيدة' }}</b><a href="{{ url_for('page', slug='about') }}">{{ 'À propos' if language == 'fr' else 'من نحن' }}</a><a href="{{ url_for('page', slug='returns') }}">{{ 'Retours' if language == 'fr' else 'الإرجاع والاستبدال' }}</a><a href="{{ url_for('page', slug='terms') }}">{{ 'Conditions' if language == 'fr' else 'الشروط والأحكام' }}</a><a href="{{ url_for('page', slug='privacy') }}">{{ 'Confidentialité' if language == 'fr' else 'الخصوصية' }}</a></div>
+      <div><b>{{ 'Nous contacter' if language == 'fr' else 'تواصل معنا' }}</b>{% if store_setting('phone') %}<a href="tel:{{ store_setting('phone') }}">{{ store_setting('phone') }}</a>{% endif %}{% if store_setting('email') %}<a href="mailto:{{ store_setting('email') }}">{{ store_setting('email') }}</a>{% endif %}{% if store_setting('store_address') %}<span>{{ store_setting('store_address') }}</span>{% endif %}<a href="{{ url_for('contact') }}">{{ 'Formulaire de contact' if language == 'fr' else 'أرسل لنا رسالة' }}</a><span class="dispatch-badge">✦ {{ 'Commandes expédiées sous 24h' if language == 'fr' else 'تُشحن الطلبات خلال 24 ساعة' }}</span></div>
+      <div class="newsletter"><b>{{ 'La petite lettre' if language == 'fr' else 'رسائل تفرحك' }}</b><p>{{ 'Nouveautés et offres, de temps en temps.' if language == 'fr' else 'عروض وجديد المتجر، من وقت لآخر.' }}</p><form class="newsletter-form" data-email="{{ store_setting('email') }}" data-not-configured="{{ 'Inscription newsletter indisponible pour le moment.' if language == 'fr' else 'الاشتراك غير متاح حالياً، تواصل معنا عبر واتساب.' }}"><label class="sr-only" for="newsletter-email">{{ 'Votre e-mail' if language == 'fr' else 'بريدك الإلكتروني' }}</label><input id="newsletter-email" type="email" placeholder="{{ 'Votre e-mail' if language == 'fr' else 'بريدك الإلكتروني' }}" required><button type="submit" aria-label="{{ 'S’inscrire' if language == 'fr' else 'اشتراك' }}">→</button></form><small class="newsletter-status" aria-live="polite"></small></div>
+    </div>
+    <div class="container footer-bottom">© {{ store_name }} · {{ 'Fait avec soin au Maroc' if language == 'fr' else 'صنع بكل حب فالمغرب 🇲🇦' }}</div>
+  </footer>
+  <a class="whatsapp-float" href="https://wa.me/{{ whatsapp|replace('+','')|replace(' ','') }}" target="_blank" rel="noopener" aria-label="{{ 'WhatsApp' if language == 'fr' else 'تواصل عبر واتساب' }}">☏</a>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body></html>
